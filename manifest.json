@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "PoE2 Trade - Import Filter/Price Checker",
+  "version": "1.0",
+  "description": "Import filter stats using the text output from the game's the CTRL + C option to the PoE2 Trade website",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["https://*.pathofexile.com/*"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.pathofexile.com/trade2*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["inject.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "poe-import2tradeHE6KE7HOCC3TCS0AYA03@firefoxextension",
+      "strict_min_version": "58.0"
+    }
+  }
+}

@@ -17,7 +17,7 @@
 
 ## Installation
 ### 🔹 Firefox
-1. Download the extension from the **[Firefox Add-ons Store](#)** *(link coming soon)*.
+1. Download the extension from the **[Firefox Add-ons Store](https://addons.mozilla.org/en-US/firefox/addon/poe2-auto-filter-price-checker/)**.
 2. Click **Add to Firefox** and confirm installation.
 
 ### 🔹 Manual Installation

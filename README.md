@@ -16,18 +16,23 @@
 3. **Apply Filters** – Instantly updates the **PoE Trade** website with optimized search filters.
 
 ## Installation
+
+### 🔹 Chrome
+1. Download the extension from the **[Chrome Web Store](https://chromewebstore.google.com/detail/poe2-trade-import-filterp/egolclbodmghhneciiodfoehkcgccehk)**.
+2. Click **Add to Chrome** and confirm installation.
+3. 
 ### 🔹 Firefox
-1. Download the extension from the **[Firefox Add-ons Store](#)** *(link coming soon)*.
+1. Download the extension from the **[Firefox Add-ons Store](https://addons.mozilla.org/en-US/firefox/addon/poe2-auto-filter-price-checker/)**.
 2. Click **Add to Firefox** and confirm installation.
 
 ### 🔹 Manual Installation
-1. Clone this repository:
+1. Clone this repository or download as a ZIP file and unzip:
    ```sh
    git clone https://github.com/yourusername/poe-trade-filter-assistant.git
 2. Open your browser’s extension settings:
   - **Firefox**: about:debugging#/runtime/this-firefox
  - **Chrome**: chrome://extensions/
-3. Enable Developer Mode and load the unpacked extension from the cloned folder.
+3. Enable Developer Mode and load the unpacked extension from the cloned or unzipped folder.
 
 ### Development
 To modify and test the extension:

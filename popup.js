@@ -13,10 +13,19 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Split text into lines and filter out lines with `:`
-    const lines = fullText.split("\n").filter(line => !line.includes(":"));
+    // Split text into lines
+    const lines = fullText.split("\n");
 
-    if (lines.length === 0) {
+    // Extract the item class (always the first line)
+    let itemClass = null;
+    if (lines[0].startsWith("Item Class:")) {
+      itemClass = lines[0].replace("Item Class:", "").trim();
+    }
+
+    // Filter out other lines with `:` except for the first one
+    const filteredLines = lines.slice(1).filter(line => !line.includes(":"));
+
+    if (filteredLines.length === 0) {
       status.textContent = "No valid stats found in the text.";
       status.style.color = "red";
       return;
@@ -25,13 +34,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Function to clean up brackets and remove "|"
     const cleanLine = (line) => {
       return line.replace(/\[[^\]|]+\|([^\]]+)\]/g, "$1").replace(/[\[\]]/g, "");
-  };
+    };
 
     // Process each line
-    const parsedStats = lines.map((line) => {
+    const parsedStats = filteredLines.map((line) => {
       const cleanedLine = cleanLine(line);
-
-      // TODO: this can probably be combined and cleaned up - use regex101 to test
 
       // Handle ranges (e.g., "Adds 10 to 16 Physical Damage to Attacks")
       if (/(\d+)\s+to\s+(\d+)/.test(cleanedLine)) {
@@ -47,19 +54,16 @@ document.addEventListener("DOMContentLoaded", () => {
         return { humanText, min };
       }
 
-      // Handle numbers anywhere in the line (e.g., "Gain 3 Mana per Enemy Killed" or "+2% to Lightning Resistance")
+      // Handle numbers anywhere in the line (e.g., "Gain 3 Mana per Enemy Killed")
       if (/\d+/.test(cleanedLine)) {
-        const humanText = cleanedLine.replace(/[+-]?(\d+(\.\d+)?)/g, "#").trim(); // Replace the entire number (with optional `%`) with "#%"
-        const min = parseFloat(cleanedLine.match(/[+-]?\d+/)?.[0] || 0); // Extract the number for min
+        const humanText = cleanedLine.replace(/[+-]?(\d+(\.\d+)?)/g, "#").trim();
+        const min = parseFloat(cleanedLine.match(/[+-]?\d+/)?.[0] || 0);
         return { humanText, min };
       }
 
       // Carry over lines with no numeric values
       return { humanText: cleanedLine.trim(), min: null };
     });
-
-    // Debug
-    //console.log("Parsed stats:", parsedStats);
 
     // Inject the postMessage logic into the active tab
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -68,9 +72,9 @@ document.addEventListener("DOMContentLoaded", () => {
       chrome.scripting.executeScript(
         {
           target: { tabId: tabId },
-          func: (parsedStats) => {
+          func: (parsedStats, itemClass) => {
+            // Send parsed stats
             parsedStats.forEach(({ humanText, min }) => {
-              // Send each parsed stat to the inject script
               window.postMessage(
                 {
                   type: "SET_STAT_FILTER_FROM_TEXT",
@@ -81,13 +85,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 "*"
               );
             });
+
+            // Send item class (if available)
+            if (itemClass) {
+              window.postMessage(
+                {
+                  type: "SET_ITEM_CLASS_FILTER",
+                  itemClass,
+                },
+                "*"
+              );
+            }
           },
-          args: [parsedStats],
+          args: [parsedStats, itemClass],
         },
         () => {
           if (chrome.runtime.lastError) {
-            //console.error("Error injecting script:", chrome.runtime.lastError.message);
-            status.textContent = "Failed to set the stat filters.";
+            status.textContent = "Failed to set filters.";
             status.style.color = "red";
           } else {
             status.textContent = `Filters applied for ${parsedStats.length} stats.`;

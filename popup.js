@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("statForm");
   const itemText = document.getElementById("itemText");
   const status = document.getElementById("status");
+  const genericAttributesCheckbox = document.getElementById("genericAttributes");
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -13,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Split text into lines
+    // Split the text into lines
     const lines = fullText.split("\n");
 
     // Extract the item class (always the first line)
@@ -23,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Filter out other lines with `:` except for the first one
-    const filteredLines = lines.slice(1).filter(line => !line.includes(":"));
+    let filteredLines = lines.slice(1).filter(line => !line.includes(":"));
 
     if (filteredLines.length === 0) {
       status.textContent = "No valid stats found in the text.";
@@ -36,8 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return line.replace(/\[[^\]|]+\|([^\]]+)\]/g, "$1").replace(/[\[\]]/g, "");
     };
 
-    // Process each line
-    const parsedStats = filteredLines.map((line) => {
+
+    let parsedStats = filteredLines.map((line) => {
       const cleanedLine = cleanLine(line);
 
       // Handle ranges (e.g., "Adds 10 to 16 Physical Damage to Attacks")
@@ -65,20 +66,74 @@ document.addEventListener("DOMContentLoaded", () => {
       return { humanText: cleanedLine.trim(), min: null };
     });
 
+    let attributes = {};
+    if (genericAttributesCheckbox.checked) {
+      // Use reduce() to split parsedStats into two buckets: attributes and
+      // everything else.
+      const [ attr, other ] = parsedStats.reduce(([attr, other], parsed) => {
+        const text = parsed.humanText;
+        if (text.includes("Dexterity") || text.includes("Strength") || text.includes("Intelligence")) {
+          attr.push(parsed);
+        } else {
+          other.push(parsed);
+        }
+        return [attr, other];
+      }, [[], []]);
+
+      parsedStats = other;
+
+      // Convert attributes to fixed string: ATTRIBUTES.
+      const transformedAttr = attr.map(({ humanText, min}) => {
+        const modifiedLine = humanText.replace(/Dexterity|Strength|Intelligence/g, "ATTRIBUTES");
+        return { humanText: modifiedLine, min };
+      })
+      // Dedupe the array, attaching a count.
+      .reduce((dict, { humanText, min }) => {
+        if (dict[humanText]) {
+          dict[humanText].count += 1;
+          if (min < dict[humanText].min) {
+            dict[humanText].min = min;
+          }
+        } else {
+          dict[humanText] = { humanText, min, count: 1 };
+        }
+        return dict;
+      }, {});
+
+      attributes = transformedAttr;
+    }
+
+    console.log("PARSED", parsedStats);
+
+
+
     // Inject the postMessage logic into the active tab
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = tabs[0].id;
-
       chrome.scripting.executeScript(
         {
           target: { tabId: tabId },
-          func: (parsedStats, itemClass) => {
+          func: (parsedStats, attributes, itemClass) => {
             // Send parsed stats
             parsedStats.forEach(({ humanText, min }) => {
               window.postMessage(
                 {
                   type: "SET_STAT_FILTER_FROM_TEXT",
                   humanText,
+                  min,
+                  max: null, // Not needed
+                },
+                "*"
+              );
+            });
+
+            // Send attribute stats
+            Object.entries(attributes).forEach(([humanText, {count, min}]) => {
+              window.postMessage(
+                {
+                  type: "SET_ATTRIBUTE_FILTER",
+                  humanText,
+                  count,
                   min,
                   max: null, // Not needed
                 },
@@ -97,14 +152,15 @@ document.addEventListener("DOMContentLoaded", () => {
               );
             }
           },
-          args: [parsedStats, itemClass],
+          args: [parsedStats, attributes, itemClass],
         },
         () => {
           if (chrome.runtime.lastError) {
             status.textContent = "Failed to set filters.";
             status.style.color = "red";
           } else {
-            status.textContent = `Filters applied for ${parsedStats.length} stats.`;
+            const statsCount = parsedStats.length + Object.keys(attributes).length;
+            status.textContent = `Filters applied for ${statsCount} stats.`;
             status.style.color = "green";
           }
         }

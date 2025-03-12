@@ -96,6 +96,35 @@ function waitForApp() {
                     }
                 }
 
+                // Handle attribute filter
+                if (event.data.type === "SET_ATTRIBUTE_FILTER") {
+                    const { humanText, count, min } = event.data;
+
+                    const statIds = [];
+                    ["Dexterity", "Intelligence", "Strength"].forEach(attr => {
+                        const expandedText = humanText.replace("ATTRIBUTES", attr);
+                        if (statsMap[expandedText]) {
+                            statIds.push(statsMap[expandedText]);
+                        }
+                    });
+
+                    const currentStats = window.app.$store.state.persistent.stats;
+                    const newGroupIndex = currentStats.length;
+
+                    window.app.$store.commit("pushStatGroup", {
+                        filters: statIds.map((id) => ({
+                            id,
+                            value: { min },
+                        })),
+                        type: "count",
+                    });
+
+                    window.app.$store.commit("setStatGroupValue", {
+                        group: newGroupIndex,
+                        value: { min: count },
+                    });
+                }
+
                 // Handle item class
                 if (event.data.type === "SET_ITEM_CLASS_FILTER") {
                     const { itemClass } = event.data;

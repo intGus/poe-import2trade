@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const itemText = document.getElementById("itemText");
   const status = document.getElementById("status");
   const genericAttributesCheckbox = document.getElementById("genericAttributes");
+  const genericElementalResistsCheckbox = document.getElementById("genericElementalResists");
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -103,9 +104,41 @@ document.addEventListener("DOMContentLoaded", () => {
       attributes = transformedAttr;
     }
 
-    console.log("PARSED", parsedStats);
+    let elementalResists = {};
+    if (genericElementalResistsCheckbox.checked) {
+      // Use reduce() to split parsedStats into two buckets: elem resist and
+      // everything else.
+      const [resist, other] = parsedStats.reduce(([resist, other], parsed) => {
+        const text = parsed.humanText;
+        if (text.includes("Lightning Resistance") || text.includes("Cold Resistance") || text.includes("Fire Resistance")) {
+          resist.push(parsed);
+        } else {
+          other.push(parsed);
+        }
+        return [resist, other];
+      }, [[], []]);
 
+      parsedStats = other;
 
+      const transformedResist = resist.map(({ humanText, min }) => {
+        const modifiedLine = humanText.replace(/Lightning|Cold|Fire/g, "ELEMENTAL_RESIST");
+        return { humanText: modifiedLine, min };
+      })
+      .reduce((dict, { humanText, min }) => {
+        if (dict[humanText]) {
+          dict[humanText].count += 1;
+          if (min < dict[humanText].min) {
+            dict[humanText].min = min;
+          }
+        } else {
+          dict[humanText] = { humanText, min, count: 1 };
+        }
+        return dict;
+      }, {});
+
+      elementalResists = transformedResist;
+    }
+    console.log(elementalResists)
 
     // Inject the postMessage logic into the active tab
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -113,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
       chrome.scripting.executeScript(
         {
           target: { tabId: tabId },
-          func: (parsedStats, attributes, itemClass) => {
+          func: (parsedStats, attributes, elementalResists, itemClass) => {
             // Send parsed stats
             parsedStats.forEach(({ humanText, min }) => {
               window.postMessage(
@@ -131,7 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
             Object.entries(attributes).forEach(([humanText, {count, min}]) => {
               window.postMessage(
                 {
-                  type: "SET_ATTRIBUTE_FILTER",
+                  type: "SET_EXPANDED_STAT_FILTER",
                   humanText,
                   count,
                   min,
@@ -140,6 +173,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 "*"
               );
             });
+
+            // Send elemental resist stats
+            Object.entries(elementalResists).forEach(([humanText, {count, min}]) => {
+              window.postMessage(
+                {
+                  type: "SET_EXPANDED_STAT_FILTER",
+                  humanText,
+                  count,
+                  min,
+                  max: null, // Not needed
+                },
+                "*"
+              );
+            });
+
 
             // Send item class (if available)
             if (itemClass) {
@@ -152,14 +200,14 @@ document.addEventListener("DOMContentLoaded", () => {
               );
             }
           },
-          args: [parsedStats, attributes, itemClass],
+          args: [parsedStats, attributes, elementalResists, itemClass],
         },
         () => {
           if (chrome.runtime.lastError) {
             status.textContent = "Failed to set filters.";
             status.style.color = "red";
           } else {
-            const statsCount = parsedStats.length + Object.keys(attributes).length;
+            const statsCount = parsedStats.length + Object.keys(attributes).length + Object.keys(elementalResists).length;
             status.textContent = `Filters applied for ${statsCount} stats.`;
             status.style.color = "green";
           }

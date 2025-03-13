@@ -24,6 +24,7 @@ function waitForApp() {
                 } else {
                     map[stat.text] = [stat.id];
                 }
+
                 return map;
             }, {});
 
@@ -96,15 +97,21 @@ function waitForApp() {
                     }
                 }
 
-                // Handle attribute filter
-                if (event.data.type === "SET_ATTRIBUTE_FILTER") {
+                // Handle attribute and elemental resist filter
+                if (event.data.type === "SET_EXPANDED_STAT_FILTER") {
                     const { humanText, count, min } = event.data;
 
                     const statIds = [];
                     ["Dexterity", "Intelligence", "Strength"].forEach(attr => {
                         const expandedText = humanText.replace("ATTRIBUTES", attr);
                         if (statsMap[expandedText]) {
-                            statIds.push(statsMap[expandedText]);
+                            statIds.push(...statsMap[expandedText]);
+                        }
+                    });
+                    ["Lightning", "Cold", "Fire"].forEach(element => {
+                        const expandedText = humanText.replace("ELEMENTAL_RESIST", element);
+                        if (statsMap[expandedText]) {
+                            statIds.push(...statsMap[expandedText]);
                         }
                     });
 

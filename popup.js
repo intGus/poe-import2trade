@@ -22,6 +22,14 @@ document.addEventListener("DOMContentLoaded", () => {
     let itemClass = null;
     if (lines[0].startsWith("Item Class:")) {
       itemClass = lines[0].replace("Item Class:", "").trim();
+      // De-pluralize. Quarterstaves is special.
+      if (itemClass === "Quarterstaves") {
+        itemClass = "Quarterstaff";
+      }
+      // Naively de-pluralize the class.
+      if (itemClass.endsWith("s")) {
+        itemClass = itemClass.slice(0, -1);
+      }
     }
 
     // Filter out other lines with `:` except for the first one

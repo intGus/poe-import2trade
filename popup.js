@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("statForm");
   const itemText = document.getElementById("itemText");
+  const minBufferInput = document.getElementById("minBuffer");
   const status = document.getElementById("status");
   const genericAttributesCheckbox = document.getElementById("genericAttributes");
   const genericElementalResistsCheckbox = document.getElementById("genericElementalResists");
@@ -146,7 +147,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
       elementalResists = transformedResist;
     }
-    console.log(elementalResists)
+
+    // Adjust min values based on min buffer value if available
+    const minBufferValue = minBufferInput.value;
+    if (minBufferValue) {
+      const bufferMultiplier = 1 - minBufferValue * 0.01;
+
+      const adjustMinValue = (min) => {
+        const adjustedMin = min * bufferMultiplier;
+        return Number.isInteger(min) ? Math.round(adjustedMin) : parseFloat(adjustedMin.toFixed(2));
+      };
+
+      parsedStats = parsedStats.map(stat => ({
+        ...stat,
+        min: stat.min !== null ? adjustMinValue(stat.min) : null
+      }));
+
+      Object.keys(attributes).forEach(key => {
+        attributes[key].min = adjustMinValue(attributes[key].min);
+      });
+
+      Object.keys(elementalResists).forEach(key => {
+        elementalResists[key].min = adjustMinValue(elementalResists[key].min);
+      });
+    }
 
     // Inject the postMessage logic into the active tab
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {

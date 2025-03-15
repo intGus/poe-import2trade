@@ -44,3 +44,14 @@ button:hover {
   align-items: center;
   gap: 4px;
 }
+
+.number-input {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px
+}
+
+.number-input input {
+  width: 50px;
+}

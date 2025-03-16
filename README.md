@@ -40,7 +40,7 @@ To modify and test the extension:
 1. **Clone the repository** and navigate into it:
 ```sh
 git clone https://github.com/intGus/poe-import2trade
-cd poe-trade-filter-assistant
+cd poe-import2trade
 ```
 2. **Make changes** to popup.js, inject.js, or content.js.
 3. **Reload the extension** in your browser.

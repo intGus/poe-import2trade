@@ -2,7 +2,7 @@ body {
   font-family: Arial, sans-serif;
   padding: 20px;
   width: 300px;
-  height: 300px;
+  height: 400px;
 }
 
 label {
@@ -10,7 +10,7 @@ label {
   margin-bottom: 8px;
 }
 
-textarea, input {
+textarea {
   width: 100%;
   padding: 2px;
   margin-bottom: 12px;
@@ -36,4 +36,22 @@ button:hover {
 .status {
   margin-top: 12px;
   font-size: 14px;
+}
+
+.checkbox {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 4px;
+}
+
+.number-input {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px
+}
+
+.number-input input {
+  width: 50px;
 }

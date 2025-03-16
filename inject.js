@@ -24,6 +24,7 @@ function waitForApp() {
                 } else {
                     map[stat.text] = [stat.id];
                 }
+
                 return map;
             }, {});
 
@@ -94,6 +95,41 @@ function waitForApp() {
                             if (DEBUG) console.log(`Stat filter set for ${statId} (Text: "${humanText}"): Min: ${min}, Max: ${max}`);
                         }
                     }
+                }
+
+                // Handle attribute and elemental resist filter
+                if (event.data.type === "SET_EXPANDED_STAT_FILTER") {
+                    const { humanText, count, min } = event.data;
+
+                    const statIds = [];
+                    ["Dexterity", "Intelligence", "Strength"].forEach(attr => {
+                        const expandedText = humanText.replace("ATTRIBUTES", attr);
+                        if (statsMap[expandedText]) {
+                            statIds.push(...statsMap[expandedText]);
+                        }
+                    });
+                    ["Lightning", "Cold", "Fire"].forEach(element => {
+                        const expandedText = humanText.replace("ELEMENTAL_RESIST", element);
+                        if (statsMap[expandedText]) {
+                            statIds.push(...statsMap[expandedText]);
+                        }
+                    });
+
+                    const currentStats = window.app.$store.state.persistent.stats;
+                    const newGroupIndex = currentStats.length;
+
+                    window.app.$store.commit("pushStatGroup", {
+                        filters: statIds.map((id) => ({
+                            id,
+                            value: { min },
+                        })),
+                        type: "count",
+                    });
+
+                    window.app.$store.commit("setStatGroupValue", {
+                        group: newGroupIndex,
+                        value: { min: count },
+                    });
                 }
 
                 // Handle item class

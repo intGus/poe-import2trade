@@ -1,7 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("statForm");
   const itemText = document.getElementById("itemText");
+  const minBufferInput = document.getElementById("minBuffer");
   const status = document.getElementById("status");
+  const genericAttributesCheckbox = document.getElementById("genericAttributes");
+  const genericElementalResistsCheckbox = document.getElementById("genericElementalResists");
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -13,17 +16,25 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Split text into lines
+    // Split the text into lines
     const lines = fullText.split("\n");
 
     // Extract the item class (always the first line)
     let itemClass = null;
     if (lines[0].startsWith("Item Class:")) {
       itemClass = lines[0].replace("Item Class:", "").trim();
+      // De-pluralize. Quarterstaves is special.
+      if (itemClass === "Quarterstaves") {
+        itemClass = "Quarterstaff";
+      }
+      // Naively de-pluralize the class.
+      if (itemClass.endsWith("s")) {
+        itemClass = itemClass.slice(0, -1);
+      }
     }
 
     // Filter out other lines with `:` except for the first one
-    const filteredLines = lines.slice(1).filter(line => !line.includes(":"));
+    let filteredLines = lines.slice(1).filter(line => !line.includes(":"));
 
     if (filteredLines.length === 0) {
       status.textContent = "No valid stats found in the text.";
@@ -36,8 +47,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return line.replace(/\[[^\]|]+\|([^\]]+)\]/g, "$1").replace(/[\[\]]/g, "");
     };
 
-    // Process each line
-    const parsedStats = filteredLines.map((line) => {
+
+    let parsedStats = filteredLines.map((line) => {
       const cleanedLine = cleanLine(line);
 
       // Handle ranges (e.g., "Adds 10 to 16 Physical Damage to Attacks")
@@ -65,14 +76,109 @@ document.addEventListener("DOMContentLoaded", () => {
       return { humanText: cleanedLine.trim(), min: null };
     });
 
+    let attributes = {};
+    if (genericAttributesCheckbox.checked) {
+      // Use reduce() to split parsedStats into two buckets: attributes and
+      // everything else.
+      const [ attr, other ] = parsedStats.reduce(([attr, other], parsed) => {
+        const text = parsed.humanText;
+        if (text.includes("Dexterity") || text.includes("Strength") || text.includes("Intelligence")) {
+          attr.push(parsed);
+        } else {
+          other.push(parsed);
+        }
+        return [attr, other];
+      }, [[], []]);
+
+      parsedStats = other;
+
+      // Convert attributes to fixed string: ATTRIBUTES.
+      const transformedAttr = attr.map(({ humanText, min}) => {
+        const modifiedLine = humanText.replace(/Dexterity|Strength|Intelligence/g, "ATTRIBUTES");
+        return { humanText: modifiedLine, min };
+      })
+      // Dedupe the array, attaching a count.
+      .reduce((dict, { humanText, min }) => {
+        if (dict[humanText]) {
+          dict[humanText].count += 1;
+          if (min < dict[humanText].min) {
+            dict[humanText].min = min;
+          }
+        } else {
+          dict[humanText] = { humanText, min, count: 1 };
+        }
+        return dict;
+      }, {});
+
+      attributes = transformedAttr;
+    }
+
+    let elementalResists = {};
+    if (genericElementalResistsCheckbox.checked) {
+      // Use reduce() to split parsedStats into two buckets: elem resist and
+      // everything else.
+      const [resist, other] = parsedStats.reduce(([resist, other], parsed) => {
+        const text = parsed.humanText;
+        if (text.includes("Lightning Resistance") || text.includes("Cold Resistance") || text.includes("Fire Resistance")) {
+          resist.push(parsed);
+        } else {
+          other.push(parsed);
+        }
+        return [resist, other];
+      }, [[], []]);
+
+      parsedStats = other;
+
+      const transformedResist = resist.map(({ humanText, min }) => {
+        const modifiedLine = humanText.replace(/Lightning|Cold|Fire/g, "ELEMENTAL_RESIST");
+        return { humanText: modifiedLine, min };
+      })
+      .reduce((dict, { humanText, min }) => {
+        if (dict[humanText]) {
+          dict[humanText].count += 1;
+          if (min < dict[humanText].min) {
+            dict[humanText].min = min;
+          }
+        } else {
+          dict[humanText] = { humanText, min, count: 1 };
+        }
+        return dict;
+      }, {});
+
+      elementalResists = transformedResist;
+    }
+
+    // Adjust min values based on min buffer value if available
+    const minBufferValue = minBufferInput.value;
+    if (minBufferValue) {
+      const bufferMultiplier = 1 - minBufferValue * 0.01;
+
+      const adjustMinValue = (min) => {
+        const adjustedMin = min * bufferMultiplier;
+        return Number.isInteger(min) ? Math.round(adjustedMin) : parseFloat(adjustedMin.toFixed(2));
+      };
+
+      parsedStats = parsedStats.map(stat => ({
+        ...stat,
+        min: stat.min !== null ? adjustMinValue(stat.min) : null
+      }));
+
+      Object.keys(attributes).forEach(key => {
+        attributes[key].min = adjustMinValue(attributes[key].min);
+      });
+
+      Object.keys(elementalResists).forEach(key => {
+        elementalResists[key].min = adjustMinValue(elementalResists[key].min);
+      });
+    }
+
     // Inject the postMessage logic into the active tab
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = tabs[0].id;
-
       chrome.scripting.executeScript(
         {
           target: { tabId: tabId },
-          func: (parsedStats, itemClass) => {
+          func: (parsedStats, attributes, elementalResists, itemClass) => {
             // Send parsed stats
             parsedStats.forEach(({ humanText, min }) => {
               window.postMessage(
@@ -86,6 +192,35 @@ document.addEventListener("DOMContentLoaded", () => {
               );
             });
 
+            // Send attribute stats
+            Object.entries(attributes).forEach(([humanText, {count, min}]) => {
+              window.postMessage(
+                {
+                  type: "SET_EXPANDED_STAT_FILTER",
+                  humanText,
+                  count,
+                  min,
+                  max: null, // Not needed
+                },
+                "*"
+              );
+            });
+
+            // Send elemental resist stats
+            Object.entries(elementalResists).forEach(([humanText, {count, min}]) => {
+              window.postMessage(
+                {
+                  type: "SET_EXPANDED_STAT_FILTER",
+                  humanText,
+                  count,
+                  min,
+                  max: null, // Not needed
+                },
+                "*"
+              );
+            });
+
+
             // Send item class (if available)
             if (itemClass) {
               window.postMessage(
@@ -97,14 +232,15 @@ document.addEventListener("DOMContentLoaded", () => {
               );
             }
           },
-          args: [parsedStats, itemClass],
+          args: [parsedStats, attributes, elementalResists, itemClass],
         },
         () => {
           if (chrome.runtime.lastError) {
             status.textContent = "Failed to set filters.";
             status.style.color = "red";
           } else {
-            status.textContent = `Filters applied for ${parsedStats.length} stats.`;
+            const statsCount = parsedStats.length + Object.keys(attributes).length + Object.keys(elementalResists).length;
+            status.textContent = `Filters applied for ${statsCount} stats.`;
             status.style.color = "green";
           }
         }

@@ -28,7 +28,7 @@
 ### 🔹 Manual Installation
 1. Clone this repository or download as a ZIP file and unzip:
    ```sh
-   git clone https://github.com/yourusername/poe-trade-filter-assistant.git
+   git clone https://github.com/intGus/poe-import2trade
 2. Open your browser’s extension settings:
   - **Firefox**: about:debugging#/runtime/this-firefox
  - **Chrome**: chrome://extensions/
@@ -39,7 +39,7 @@ To modify and test the extension:
 
 1. **Clone the repository** and navigate into it:
 ```sh
-git clone https://github.com/yourusername/poe-trade-filter-assistant.git
+git clone https://github.com/intGus/poe-import2trade
 cd poe-trade-filter-assistant
 ```
 2. **Make changes** to popup.js, inject.js, or content.js.

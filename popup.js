@@ -6,6 +6,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const genericAttributesCheckbox = document.getElementById("genericAttributes");
   const genericElementalResistsCheckbox = document.getElementById("genericElementalResists");
 
+  // Load saved values from storage
+  chrome.storage.local.get(["minBuffer", "genericAttributes", "genericElementalResists"], (result) => {
+    minBufferInput.value = result.minBuffer || "";
+    genericAttributesCheckbox.checked = result.genericAttributes || false;
+    genericElementalResistsCheckbox.checked = result.genericElementalResists || false;
+  });
+
+  // Save form field changes to local storage
+  const saveToLocalStorage = () => {
+    chrome.storage.local.set({
+      minBuffer: minBufferInput.value,
+      genericAttributes: genericAttributesCheckbox.checked,
+      genericElementalResists: genericElementalResistsCheckbox.checked
+    });
+  };
+
+  minBufferInput.addEventListener("input", saveToLocalStorage);
+  genericAttributesCheckbox.addEventListener("change", saveToLocalStorage);
+  genericElementalResistsCheckbox.addEventListener("change", saveToLocalStorage);
+
   form.addEventListener("submit", (e) => {
     e.preventDefault();
 

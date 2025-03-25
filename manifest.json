@@ -3,7 +3,7 @@
   "name": "PoE2 Trade - Import Filter/Price Checker",
   "version": "1.0",
   "description": "Import filter stats using the text output from the game's the CTRL + C option to the PoE2 Trade website",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["https://*.pathofexile.com/*"],
   "icons": {
     "64": "icons/icon64.png"

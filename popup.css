@@ -2,7 +2,7 @@ body {
   font-family: Arial, sans-serif;
   padding: 20px;
   width: 300px;
-  height: 400px;
+  height: 435px;
 }
 
 label {
@@ -17,6 +17,13 @@ textarea {
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 12px;
+}
+
+.submit-group {
+  padding-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 button {

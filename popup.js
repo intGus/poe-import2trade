@@ -3,14 +3,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const itemText = document.getElementById("itemText");
   const minBufferInput = document.getElementById("minBuffer");
   const status = document.getElementById("status");
+  const clearCheckbox = document.getElementById("clearCheckbox");
   const genericAttributesCheckbox = document.getElementById("genericAttributes");
   const genericElementalResistsCheckbox = document.getElementById("genericElementalResists");
 
   // Load saved values from storage
-  chrome.storage.local.get(["minBuffer", "genericAttributes", "genericElementalResists"], (result) => {
+  chrome.storage.local.get(["minBuffer", "genericAttributes", "genericElementalResists", "clearCheckbox"], (result) => {
     minBufferInput.value = result.minBuffer || "";
     genericAttributesCheckbox.checked = result.genericAttributes || false;
     genericElementalResistsCheckbox.checked = result.genericElementalResists || false;
+    clearCheckbox.checked = result.clearCheckbox || false;
   });
 
   // Save form field changes to local storage
@@ -18,13 +20,15 @@ document.addEventListener("DOMContentLoaded", () => {
     chrome.storage.local.set({
       minBuffer: minBufferInput.value,
       genericAttributes: genericAttributesCheckbox.checked,
-      genericElementalResists: genericElementalResistsCheckbox.checked
+      genericElementalResists: genericElementalResistsCheckbox.checked,
+      clearCheckbox: clearCheckbox.checked
     });
   };
 
   minBufferInput.addEventListener("input", saveToLocalStorage);
   genericAttributesCheckbox.addEventListener("change", saveToLocalStorage);
   genericElementalResistsCheckbox.addEventListener("change", saveToLocalStorage);
+  clearCheckbox.addEventListener("change", saveToLocalStorage);
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -195,10 +199,21 @@ document.addEventListener("DOMContentLoaded", () => {
     // Inject the postMessage logic into the active tab
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = tabs[0].id;
+
       chrome.scripting.executeScript(
         {
           target: { tabId: tabId },
-          func: (parsedStats, attributes, elementalResists, itemClass) => {
+          func: (parsedStats, attributes, elementalResists, itemClass, clear) => {
+            // Clear first if needed.
+            if (clear) {
+              window.postMessage(
+                {
+                  type: "CLEAR_SEARCH_FORM",
+                },
+                "*"
+              );
+            }
+
             // Send parsed stats
             parsedStats.forEach(({ humanText, min }) => {
               window.postMessage(
@@ -252,7 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
               );
             }
           },
-          args: [parsedStats, attributes, elementalResists, itemClass],
+          args: [parsedStats, attributes, elementalResists, itemClass, clearCheckbox.checked],
         },
         () => {
           if (chrome.runtime.lastError) {

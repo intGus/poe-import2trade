@@ -54,6 +54,11 @@ function waitForApp() {
             window.addEventListener("message", (event) => {
                 if (event.source !== window) return; // Only accept messages from the same page
 
+                // Handle clear search form
+                if (event.data.type === "CLEAR_SEARCH_FORM") {
+                    window.app.$store.commit("clearSearchForm");
+                }
+
                 // Handle stat filters
                 if (event.data.type === "SET_STAT_FILTER_FROM_TEXT") {
                     const { humanText, min, max } = event.data;

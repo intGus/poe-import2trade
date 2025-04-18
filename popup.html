@@ -26,7 +26,13 @@
             </div>
             <label for="minBuffer">Value buffer</label>
         </div>
-        <button type="submit">Set Filters</button>
+        <div class="submit-group">
+            <div class="checkbox">
+                <input type="checkbox" id="clearCheckbox" name="clearCheckbox">
+                <label for="clearCheckbox">Clear</label>
+            </div>
+            <button type="submit">Set Filters</button>
+        </div>
     </form>
     <p id="status" class="status"></p>
     <script src="popup.js"></script>

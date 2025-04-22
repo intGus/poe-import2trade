@@ -11,18 +11,27 @@
 <body>
   <h2>Set Stat Filters</h2>
   <form id="statForm">
-    <label for="itemText">Paste Item Text:</label>
+    <label for="itemText">Paste Item Text:
+      <span data-tooltip="Press Ctrl+C on an item in-game, then paste it here.">❔</span>
+    </label>
     <textarea id="itemText" rows="10" placeholder="Paste your item text here"></textarea>
     <div class="checkbox">
       <input type="checkbox" id="genericAttributes" name="genericAttributes" />
       <label for="genericAttributes">Search All Attribute</label>
+      <span
+        data-tooltip="Replaces individual attributes (Str, Dex, Int) with a single count filter that matches any of them.">❔</span>
     </div>
     <div class="checkbox">
       <input type="checkbox" id="genericElementalResists" name="genericElementalResists" />
       <label for="genericElementalResists">Search All Elemental Resists</label>
+      <span class="tooltip-rightfix"
+        data-tooltip="Replaces specific elemental resistances with a count filter for Fire, Cold, and Lightning Res.">❔</span>
     </div>
     <fieldset>
-      <legend>Search Range</legend>
+      <legend>
+        Search Range
+        <span data-tooltip="Adjusts the search range, good for price checks. For example, +10 to Strength with a 20% Min and 30% Max becomes a stat filter for 8 to 13. If Max is 0, there will be no upper limit.">❔</span>
+      </legend>
       <div class="range-container">
         <div class="range-input">
           <label for="minBufferRange">Min Variance</label>

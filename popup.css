@@ -78,8 +78,54 @@ input[type="range"].rtl {
 
 .submit-group {
   padding-top: 12px;
+  width: 80%;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   margin-top: 1rem;
+}
+
+[data-tooltip] {
+  position: relative;
+  cursor: help;
+  display: inline-block;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+  z-index: 10;
+
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+
+  white-space: normal;
+  width: max-content;
+  min-width: 180px;
+  max-width: 260px;
+  text-align: left;
+  pointer-events: none;
+}
+
+[data-tooltip]:hover::after {
+  visibility: visible;
+  opacity: 1;
+}
+
+.tooltip-rightfix::after {
+  left: auto;
+  right: 10%;
+  margin-right: -50px;
+  transform: none;
 }

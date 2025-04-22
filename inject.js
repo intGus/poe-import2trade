@@ -1,6 +1,6 @@
 const MAX_RETRIES = 100;
 let retryCount = 0;
-const DEBUG = true;
+const DEBUG = false;
 
 // Function to wait for the `app` variable
 function waitForApp() {

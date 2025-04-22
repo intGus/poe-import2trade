@@ -1,40 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Set Stat Filters</title>
-    <link rel="stylesheet" href="popup.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Set Stat Filters</title>
+  <link rel="stylesheet" href="popup.css">
 </head>
+
 <body>
-    <h2>Set Stat Filters</h2>
-    <form id="statForm">
-        <label for="itemText">Paste Item Text:</label>
-        <textarea id="itemText" rows="10" placeholder="Paste your item text here"></textarea>
-        <div class="checkbox">
-            <input type="checkbox" id="genericAttributes" name="genericAttributes">
-            <label for="genericAttributes">Search All Attribute</label>
+  <h2>Set Stat Filters</h2>
+  <form id="statForm">
+    <label for="itemText">Paste Item Text:</label>
+    <textarea id="itemText" rows="10" placeholder="Paste your item text here"></textarea>
+    <div class="checkbox">
+      <input type="checkbox" id="genericAttributes" name="genericAttributes" />
+      <label for="genericAttributes">Search All Attribute</label>
+    </div>
+    <div class="checkbox">
+      <input type="checkbox" id="genericElementalResists" name="genericElementalResists" />
+      <label for="genericElementalResists">Search All Elemental Resists</label>
+    </div>
+    <fieldset>
+      <legend>Search Range</legend>
+      <div class="range-container">
+        <div class="range-input">
+          <label for="minBufferRange">Min Variance</label>
+          <div>
+            <input type="range" id="minBufferRange" min="0" max="100" value="0" class="rtl">
+            <input type="number" id="minBufferInput" min="0" max="110" value="0">
+            <span>%</span>
+          </div>
         </div>
-        <div class="checkbox">
-            <input type="checkbox" id="genericElementalResists" name="genericElementalResists">
-            <label for="genericElementalResists">Search All Elemental Resists</label>
+        <div class="range-input">
+          <label for="maxBufferRange">Max Variance</label>
+          <div>
+            <input type="range" id="maxBufferRange" min="0" max="100" value="0">
+            <input type="number" id="maxBufferInput" min="0" max="100" value="0">
+            <span>%</span>
+          </div>
         </div>
-        <div class="number-input">
-            <div>
-                <input type="number" id="minBuffer" name="minBuffer" min="0" step="1">
-                <span>%</span>
-            </div>
-            <label for="minBuffer">Value buffer</label>
-        </div>
-        <div class="submit-group">
-            <div class="checkbox">
-                <input type="checkbox" id="clearCheckbox" name="clearCheckbox">
-                <label for="clearCheckbox">Clear</label>
-            </div>
-            <button type="submit">Set Filters</button>
-        </div>
-    </form>
-    <p id="status" class="status"></p>
-    <script src="popup.js"></script>
+      </div>
+    </fieldset>
+
+
+    <div class="submit-group">
+      <div class="checkbox">
+        <input type="checkbox" id="clearCheckbox" name="clearCheckbox">
+        <label for="clearCheckbox">Clear</label>
+      </div>
+      <button type="submit">Set Filters</button>
+    </div>
+  </form>
+  <p id="status" class="status"></p>
+  <script src="popup.js"></script>
 </body>
+
 </html>

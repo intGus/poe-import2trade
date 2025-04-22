@@ -1,8 +1,9 @@
 body {
   font-family: Arial, sans-serif;
-  padding: 20px;
+  padding: 0 20px;
   width: 300px;
-  height: 435px;
+  height: 525px;
+  font-size: 14px;
 }
 
 label {
@@ -17,13 +18,6 @@ textarea {
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 12px;
-}
-
-.submit-group {
-  padding-top: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 
 button {
@@ -46,19 +40,46 @@ button:hover {
 }
 
 .checkbox {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 4px;
+  margin-bottom: 0.5rem;
 }
 
-.number-input {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 16px
+.checkbox label {
+  display: inline;
 }
 
-.number-input input {
-  width: 50px;
+fieldset {
+  margin-top: 1rem;
+}
+
+.range-container {
+  display: flex;
+  margin-top: 0.5rem;
+}
+
+input[type="range"].rtl {
+  direction: rtl;
+}
+
+.range-input {
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.range-input input[type="range"] {
+  width: 120px;
+  margin-bottom: 1rem;
+}
+
+
+.range-input input[type="number"] {
+  width: 40px;
+  font-size: 12px;
+}
+
+.submit-group {
+  padding-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 1rem;
 }

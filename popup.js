@@ -1,15 +1,44 @@
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("statForm");
   const itemText = document.getElementById("itemText");
-  const minBufferInput = document.getElementById("minBuffer");
+  const minBufferInput = document.getElementById("minBufferInput");
+  const maxBufferInput = document.getElementById("maxBufferInput");
   const status = document.getElementById("status");
   const clearCheckbox = document.getElementById("clearCheckbox");
   const genericAttributesCheckbox = document.getElementById("genericAttributes");
   const genericElementalResistsCheckbox = document.getElementById("genericElementalResists");
 
+  // ui test
+  const syncSliderWithInput = (rangeEl, numberEl) => {
+    // Range to number
+    rangeEl.addEventListener('input', () => {
+      numberEl.value = rangeEl.value;
+    });
+
+    // Number to range
+    numberEl.addEventListener('input', () => {
+      rangeEl.value = numberEl.value;
+    });
+  };
+
+  syncSliderWithInput(
+    document.getElementById('minBufferRange'),
+    document.getElementById('minBufferInput')
+  );
+
+  syncSliderWithInput(
+    document.getElementById('maxBufferRange'),
+    document.getElementById('maxBufferInput')
+  );
+
+  // end ui test
+
   // Load saved values from storage
-  chrome.storage.local.get(["minBuffer", "genericAttributes", "genericElementalResists", "clearCheckbox"], (result) => {
-    minBufferInput.value = result.minBuffer || "";
+  chrome.storage.local.get(["minBuffer", "maxBuffer", "genericAttributes", "genericElementalResists", "clearCheckbox"], (result) => {
+    minBufferInput.value = result.minBuffer || 0;
+    document.getElementById('minBufferRange').value = result.minBuffer || 0
+    maxBufferInput.value = result.maxBuffer || 0;
+    document.getElementById('maxBufferRange').value = result.maxBuffer || 0
     genericAttributesCheckbox.checked = result.genericAttributes || false;
     genericElementalResistsCheckbox.checked = result.genericElementalResists || false;
     clearCheckbox.checked = result.clearCheckbox || false;
@@ -19,6 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveToLocalStorage = () => {
     chrome.storage.local.set({
       minBuffer: minBufferInput.value,
+      maxBuffer: maxBufferInput.value,
       genericAttributes: genericAttributesCheckbox.checked,
       genericElementalResists: genericElementalResistsCheckbox.checked,
       clearCheckbox: clearCheckbox.checked
@@ -26,6 +56,9 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   minBufferInput.addEventListener("input", saveToLocalStorage);
+  document.getElementById('minBufferRange').addEventListener("input", saveToLocalStorage)
+  maxBufferInput.addEventListener("input", saveToLocalStorage);
+  document.getElementById('maxBufferRange').addEventListener("input", saveToLocalStorage)
   genericAttributesCheckbox.addEventListener("change", saveToLocalStorage);
   genericElementalResistsCheckbox.addEventListener("change", saveToLocalStorage);
   clearCheckbox.addEventListener("change", saveToLocalStorage);
@@ -172,29 +205,43 @@ document.addEventListener("DOMContentLoaded", () => {
       elementalResists = transformedResist;
     }
 
-    // Adjust min values based on min buffer value if available
-    const minBufferValue = minBufferInput.value;
-    if (minBufferValue) {
-      const bufferMultiplier = 1 - minBufferValue * 0.01;
+    // Adjust min and max values based on min and max buffer value if available
+    const minBufferValue = parseFloat(minBufferInput.value) || 0;
+    const maxBufferValue = parseFloat(maxBufferInput.value) || 0;
+    
+    const minMultiplier = 1 - minBufferValue * 0.01;
+    const maxMultiplier = 1 + maxBufferValue * 0.01;
+    
+    const adjustValue = (value, multiplier) => {
+      const adjusted = value * multiplier;
+      return Number.isInteger(value) ? Math.round(adjusted) : parseFloat(adjusted.toFixed(2));
+    };
 
-      const adjustMinValue = (min) => {
-        const adjustedMin = min * bufferMultiplier;
-        return Number.isInteger(min) ? Math.round(adjustedMin) : parseFloat(adjustedMin.toFixed(2));
-      };
-
-      parsedStats = parsedStats.map(stat => ({
-        ...stat,
-        min: stat.min !== null ? adjustMinValue(stat.min) : null
-      }));
-
-      Object.keys(attributes).forEach(key => {
-        attributes[key].min = adjustMinValue(attributes[key].min);
-      });
-
-      Object.keys(elementalResists).forEach(key => {
-        elementalResists[key].min = adjustMinValue(elementalResists[key].min);
-      });
-    }
+    // if max buffer is not provided, max is null so it won't be set on filter
+    
+    parsedStats = parsedStats.map(stat => {
+      if (stat.min !== null) {
+        return {
+          ...stat,
+          min: adjustValue(stat.min, minMultiplier),
+          max: maxBufferValue > 0 ? adjustValue(stat.min, maxMultiplier) : null,
+        };
+      }
+      return { ...stat, max: null };
+    });
+    
+    Object.keys(attributes).forEach(key => {
+      const originalMin = attributes[key].min;
+      attributes[key].min = adjustValue(originalMin, minMultiplier);
+      attributes[key].max = maxBufferValue > 0 ? adjustValue(originalMin, maxMultiplier) : null;
+    });
+    
+    Object.keys(elementalResists).forEach(key => {
+      const originalMin = elementalResists[key].min;
+      elementalResists[key].min = adjustValue(originalMin, minMultiplier);
+      elementalResists[key].max = maxBufferValue > 0 ? adjustValue(originalMin, maxMultiplier) : null;
+    });
+    
 
     // Inject the postMessage logic into the active tab
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -215,41 +262,41 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // Send parsed stats
-            parsedStats.forEach(({ humanText, min }) => {
+            parsedStats.forEach(({ humanText, min, max }) => {
               window.postMessage(
                 {
                   type: "SET_STAT_FILTER_FROM_TEXT",
                   humanText,
                   min,
-                  max: null, // Not needed
+                  max
                 },
                 "*"
               );
             });
 
             // Send attribute stats
-            Object.entries(attributes).forEach(([humanText, {count, min}]) => {
+            Object.entries(attributes).forEach(([humanText, {count, min, max}]) => {
               window.postMessage(
                 {
                   type: "SET_EXPANDED_STAT_FILTER",
                   humanText,
                   count,
                   min,
-                  max: null, // Not needed
+                  max
                 },
                 "*"
               );
             });
 
             // Send elemental resist stats
-            Object.entries(elementalResists).forEach(([humanText, {count, min}]) => {
+            Object.entries(elementalResists).forEach(([humanText, {count, min, max}]) => {
               window.postMessage(
                 {
                   type: "SET_EXPANDED_STAT_FILTER",
                   humanText,
                   count,
                   min,
-                  max: null, // Not needed
+                  max
                 },
                 "*"
               );

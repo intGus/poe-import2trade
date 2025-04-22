@@ -154,15 +154,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const modifiedLine = humanText.replace(/Dexterity|Strength|Intelligence/g, "ATTRIBUTES");
         return { humanText: modifiedLine, min };
       })
-      // Dedupe the array, attaching a count.
+      // Dedupe the array, summing the min values.
       .reduce((dict, { humanText, min }) => {
         if (dict[humanText]) {
-          dict[humanText].count += 1;
-          if (min < dict[humanText].min) {
-            dict[humanText].min = min;
-          }
+          dict[humanText].min += min; // Sum the min values
         } else {
-          dict[humanText] = { humanText, min, count: 1 };
+          dict[humanText] = { humanText, min };
         }
         return dict;
       }, {});
@@ -187,20 +184,17 @@ document.addEventListener("DOMContentLoaded", () => {
       parsedStats = other;
 
       const transformedResist = resist.map(({ humanText, min }) => {
-        const modifiedLine = humanText.replace(/Lightning|Cold|Fire/g, "ELEMENTAL_RESIST");
-        return { humanText: modifiedLine, min };
-      })
-      .reduce((dict, { humanText, min }) => {
-        if (dict[humanText]) {
-          dict[humanText].count += 1;
-          if (min < dict[humanText].min) {
-            dict[humanText].min = min;
+          const modifiedLine = humanText.replace(/Lightning|Cold|Fire/g, "ELEMENTAL_RESIST");
+          return { humanText: modifiedLine, min };
+        })
+        .reduce((dict, { humanText, min }) => {
+          if (dict[humanText]) {
+            dict[humanText].min += min; // Sum the min values
+          } else {
+            dict[humanText] = { humanText, min };
           }
-        } else {
-          dict[humanText] = { humanText, min, count: 1 };
-        }
-        return dict;
-      }, {});
+          return dict;
+        }, {});
 
       elementalResists = transformedResist;
     }

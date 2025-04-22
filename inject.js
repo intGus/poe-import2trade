@@ -104,7 +104,7 @@ function waitForApp() {
 
                 // Handle attribute and elemental resist filter
                 if (event.data.type === "SET_EXPANDED_STAT_FILTER") {
-                    const { humanText, count, min, max } = event.data;
+                    const { humanText, min, max } = event.data;
 
                     const statIds = [];
                     ["Dexterity", "Intelligence", "Strength"].forEach(attr => {
@@ -126,14 +126,13 @@ function waitForApp() {
                     window.app.$store.commit("pushStatGroup", {
                         filters: statIds.map((id) => ({
                             id,
-                            value: { min, max },
                         })),
-                        type: "count",
+                        type: "weight",
                     });
 
                     window.app.$store.commit("setStatGroupValue", {
                         group: newGroupIndex,
-                        value: { min: count },
+                        value: { min, max },
                     });
                 }
 

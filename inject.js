@@ -62,12 +62,18 @@ function waitForApp() {
                 // Handle stat filters
                 if (event.data.type === "SET_STAT_FILTER_FROM_TEXT") {
                     const { humanText, min, max } = event.data;
-                    if (!statsMap[humanText]) {
-                        if (DEBUG) console.log(`No matching stat ID found for "${humanText}".`);
+                    
+                    // Remove (desecrated) and (fractured) modifiers. This
+                    // treats them like explicit modifiers. This assumes that an
+                    // explicit mod variant exists for these types of mods.
+                    const cleanText = humanText.replace(/\s*\((desecrated|fractured)\)$/, '');
+                    
+                    if (!statsMap[cleanText]) {
+                        if (DEBUG) console.log(`No matching stat ID found for "${cleanText}".`);
                         return;
                     }
 
-                    const statIds = statsMap[humanText];
+                    const statIds = statsMap[cleanText];
 
                     if (statIds.length > 1) {
                         if (DEBUG) console.log(`Duplicate stat IDs found for "${humanText}":`, statIds);

@@ -111,7 +111,10 @@ document.addEventListener("DOMContentLoaded", () => {
       // Handle ranges (e.g., "Adds 10 to 16 Physical Damage to Attacks")
       if (/(\d+)\s+to\s+(\d+)/.test(cleanedLine)) {
         const humanText = cleanedLine.replace(/(\d+)\s+to\s+(\d+)/g, "# to #");
-        const min = parseFloat(cleanedLine.match(/\d+/)?.[0]); // Use the first number as min
+        const matches = cleanedLine.match(/(\d+)\s+to\s+(\d+)/);
+        const minVal = parseFloat(matches[1]);
+        const maxVal = parseFloat(matches[2]);
+        const min = Math.floor((minVal + maxVal) / 2);
         return { humanText, min };
       }
 

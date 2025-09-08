@@ -34,7 +34,7 @@ function waitForApp() {
             // Get the item category
 
             const propertyFilters = staticData.propertyFilters || [];
-            const itemClassFilter = propertyFilters[0].filters;
+            const itemClassFilter = propertyFilters.find(filter => filter.id === 'type_filters')?.filters;
 
             if (!itemClassFilter) {
                 console.error("Error: Could not find item class filter.");

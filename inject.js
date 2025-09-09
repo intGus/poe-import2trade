@@ -141,6 +141,10 @@ function waitForApp() {
                         }
                     });
 
+                    if (statIds.length === 0) {
+                        return
+                    }
+
                     const currentStats = window.app.$store.state.persistent.stats;
                     const newGroupIndex = currentStats.length;
 

@@ -34,7 +34,7 @@ function waitForApp() {
             // Get the item category
 
             const propertyFilters = staticData.propertyFilters || [];
-            const itemClassFilter = propertyFilters[0].filters;
+            const itemClassFilter = propertyFilters.find(filter => filter.id === 'type_filters')?.filters;
 
             if (!itemClassFilter) {
                 console.error("Error: Could not find item class filter.");
@@ -62,12 +62,33 @@ function waitForApp() {
                 // Handle stat filters
                 if (event.data.type === "SET_STAT_FILTER_FROM_TEXT") {
                     const { humanText, min, max } = event.data;
-                    if (!statsMap[humanText]) {
-                        if (DEBUG) console.log(`No matching stat ID found for "${humanText}".`);
-                        return;
+
+                    // Remove (desecrated) and (fractured) modifiers. This
+                    // treats them like explicit modifiers. This assumes that an
+                    // explicit mod variant exists for these types of mods.
+                    const cleanText = humanText.replace(/\s*\((desecrated|fractured)\)$/, '');
+
+                    // Collect stat IDs for the base text and variants
+                    const statIds = [];
+
+                    // Add base stat if it exists
+                    if (statsMap[cleanText]) {
+                        statIds.push(...statsMap[cleanText]);
                     }
 
-                    const statIds = statsMap[humanText];
+                    // Add variants if they exist
+                    const variants = ['Local', 'Global', 'Jewel'];
+                    for (const variant of variants) {
+                        const variantText = `${cleanText} (${variant})`;
+                        if (statsMap[variantText]) {
+                            statIds.push(...statsMap[variantText]);
+                        }
+                    }
+
+                    if (statIds.length === 0) {
+                        if (DEBUG) console.log(`No matching stat ID found for "${cleanText}" or its variants.`);
+                        return;
+                    }
 
                     if (statIds.length > 1) {
                         if (DEBUG) console.log(`Duplicate stat IDs found for "${humanText}":`, statIds);
@@ -104,7 +125,7 @@ function waitForApp() {
 
                 // Handle attribute and elemental resist filter
                 if (event.data.type === "SET_EXPANDED_STAT_FILTER") {
-                    const { humanText, count, min, max } = event.data;
+                    const { humanText, min, max } = event.data;
 
                     const statIds = [];
                     ["Dexterity", "Intelligence", "Strength"].forEach(attr => {
@@ -120,20 +141,23 @@ function waitForApp() {
                         }
                     });
 
+                    if (statIds.length === 0) {
+                        return
+                    }
+
                     const currentStats = window.app.$store.state.persistent.stats;
                     const newGroupIndex = currentStats.length;
 
                     window.app.$store.commit("pushStatGroup", {
                         filters: statIds.map((id) => ({
                             id,
-                            value: { min, max },
                         })),
-                        type: "count",
+                        type: "weight",
                     });
 
                     window.app.$store.commit("setStatGroupValue", {
                         group: newGroupIndex,
-                        value: { min: count },
+                        value: { min, max },
                     });
                 }
 

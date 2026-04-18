@@ -76,22 +76,33 @@ document.addEventListener("DOMContentLoaded", () => {
     // Split the text into lines
     const lines = fullText.split("\n");
 
+    // Map from in-game "Item Class:" tooltip text to the trade site's filter option text.
+    // The trade site uses the plural form for almost all classes; only the exceptions below
+    // differ from the in-game name. Unknown classes fall through unchanged so future item
+    // types are handled gracefully without requiring an extension update.
+    const ITEM_CLASS_OVERRIDES = {
+      // Weapons
+      "Quarterstaves":       "Quarterstaff",
+      // One-handed melee
+      "One Hand Swords":     "One Hand Swords",
+      "One Hand Axes":       "One Hand Axes",
+      "One Hand Maces":      "One Hand Maces",
+      // Two-handed melee
+      "Two Hand Swords":     "Two Hand Swords",
+      "Two Hand Axes":       "Two Hand Axes",
+      "Two Hand Maces":      "Two Hand Maces",
+    };
+
     // Extract the item class (always the first line)
     let itemClass = null;
     if (lines[0].startsWith("Item Class:")) {
-      itemClass = lines[0].replace("Item Class:", "").trim();
-      // De-pluralize. Quarterstaves is special.
-      if (itemClass === "Quarterstaves") {
-        itemClass = "Quarterstaff";
-      }
-      // Naively de-pluralize the class.
-      if (itemClass.endsWith("s")) {
-        itemClass = itemClass.slice(0, -1);
-      }
+      const rawClass = lines[0].replace("Item Class:", "").trim();
+      itemClass = ITEM_CLASS_OVERRIDES[rawClass] ?? rawClass;
     }
 
-    // Filter out other lines with `:` except for the first one
-    let filteredLines = lines.slice(1).filter(line => !line.includes(":"));
+    // Filter out other lines with `:` except for the first one, and skip
+    // tooltip separator lines (e.g. "--------")
+    let filteredLines = lines.slice(1).filter(line => !line.includes(":") && !/^[\s-]*$/.test(line));
 
     if (filteredLines.length === 0) {
       status.textContent = "No valid stats found in the text.";

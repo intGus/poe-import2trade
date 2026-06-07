@@ -100,9 +100,17 @@ document.addEventListener("DOMContentLoaded", () => {
       itemClass = ITEM_CLASS_OVERRIDES[rawClass] ?? rawClass;
     }
 
-    // Filter out other lines with `:` except for the first one, and skip
-    // tooltip separator lines (e.g. "--------")
-    let filteredLines = lines.slice(1).filter(line => !line.includes(":") && !/^[\s-]*$/.test(line));
+    // Filter lines: skip separators, metadata lines with ':', and implicit mod blocks.
+    // Implicit headers use '—' not ':', so they pass the colon check — track them with state.
+    let filteredLines = [];
+    let skipImplicit = false;
+    lines.slice(1).forEach(line => {
+      if (/^[\s-]*$/.test(line)) { skipImplicit = false; return; }  // separator resets state
+      if (line.includes(":")) return;                                 // metadata line
+      if (/^\{\s*Implicit Modifier/i.test(line)) { skipImplicit = true; return; } // implicit header
+      if (skipImplicit) return;                                       // implicit value line
+      filteredLines.push(line);
+    });
 
     if (filteredLines.length === 0) {
       status.textContent = "No valid stats found in the text.";

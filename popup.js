@@ -112,7 +112,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Function to clean up brackets and remove "|"
     const cleanLine = (line) => {
-      return line.replace(/\[[^\]|]+\|([^\]]+)\]/g, "$1").replace(/[\[\]]/g, "");
+      return line
+        .replace(/\[[^\]|]+\|([^\]]+)\]/g, "$1")  // extract text after | in [x|y] brackets
+        .replace(/[\[\]]/g, "")                     // remove remaining brackets
+        .replace(/\(\d+\.?\d*-\d+\.?\d*\)/g, '');  // strip (min-max) roll annotations from advanced format
     };
 
 
